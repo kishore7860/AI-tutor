@@ -161,7 +161,26 @@ def create_quiz(subject, level, num_questions=5, reveal_answer=True):
         raise Exception(f"Error creating quiz: {e}")
     
 def _format_quiz_with_reveal(quiz_data):
-    
-    for i, question in enumerate(quiz_data,1):
-        option_lettes=["A","B","C","D"]
-        
+    html = ""
+    for i, question in enumerate(quiz_data, 1):
+        html += f"<h4>Q{i}. {question['question']}</h4><ul>"
+        option_letters = ["A", "B", "C", "D"]
+        correct_index = question["options"].index(question["correct_answer"]) if question["correct_answer"] in question["options"] else 0
+        for j, option in enumerate(question["options"]):
+            is_correct = j == correct_index
+            if is_correct:
+                html += f"<li><b>{option_letters[j]}. {option} ✅</b></li>"
+            else:
+                html += f"<li>{option_letters[j]}. {option}</li>"
+        html += f"</ul><p><i>Explanation: {question['explanation']}</i></p><hr>"
+    return html
+def export_quiz_to_html(quiz_data,file_path="quiz.html"):
+    try:
+        with open(file_path,"w",encoding="utf-8") as file:
+            file.write(_format_quiz_with_reveal(quiz_data))
+        logger.info(f"Quiz exported to {file_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Error exporting quiz to HTML: {e}")
+        raise Exception(f"Error exporting quiz to HTML: {e}")
+        return False
