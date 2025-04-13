@@ -1,4 +1,4 @@
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage
 import os
 from dotenv import load_dotenv
@@ -17,7 +17,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 def get_llm():
     try:
         llm = ChatOpenAI(
-            model="gpt-4o-mini",
+            model="gpt-4o",
             temperature=0.5,
             openai_api_key=OPENAI_API_KEY
         )
@@ -28,19 +28,25 @@ def get_llm():
         raise e
     
 def generate_tutoring_response(subject, level, question, learning_style, background, language):
-    
     try:
         llm = get_llm()
         
         # Construct the prompt with all the context
         prompt = _create_prompt(subject, level, question, learning_style, background, language)
         logger.info(f"Generating the tutoring response for subject {subject}, level {level}")
-        response = llm([HumanMessage(content=prompt)])
+        response = llm.invoke(prompt)
 
-        return _format_tutoring_response(response.content, learning_style)
+        # Extract and validate response content
+        if hasattr(response, 'content') and response.content:
+            formatted_response = _format_tutoring_response(str(response.content), learning_style)
+            return {"response": formatted_response}
+        else:
+            logger.error("Empty or invalid response from LLM")
+            raise ValueError("Empty or invalid response from LLM")
     except Exception as e:
-        logger.error(f"Error generating tutoring response: {e}")
-        raise Exception(f"Error generating tutoring response: {e}")
+        logger.error(f"Error generating tutoring response: {str(e)}")
+        raise Exception(f"Error generating tutoring response: {str(e)}")
+
     
 def _format_tutoring_response(response, learning_style):
     if learning_style == "visual":
@@ -68,24 +74,28 @@ def _create_prompt(subject, level, question, learning_style, background, languag
     return prompt
 
 def _create_quiz_prompt(subject, level, num_questions):
-    return f"""You are an expert tutor in {subject} for {level} level students.
-    Please create a quiz with {num_questions} questions.
-    The quiz questions should be in level {level} of difficulty.
+    return f"""
+You are an expert tutor in {subject} for {level}-level students.
 
-    Please ensure the quiz is aligned with the student's learning style and background knowledge.
-    format your resopnse as JSON:
-    '''
-    [
-        {
-            "question": "question 1",
-            "options": ["option 1", "option 2", "option 3", "option 4"],
-            "correct_answer": "correct answer",
-            "explanation": "explanation of the correct answer"
-        }
-    ]
-    '''
-    Do not include any other text in your response.
-    """
+Please create a quiz containing {num_questions} multiple-choice questions. 
+Each question should be appropriate for the {level} level of difficulty.
+
+Format your response **strictly** as a JSON array. 
+Each question should follow this structure:
+
+[
+  {{
+    "question": "Your question text here",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "correct_answer": "The correct answer text",
+    "explanation": "Brief explanation of why this is the correct answer"
+  }},
+  ...
+]
+
+❗ Do not include any text before or after the JSON block.
+Ensure the JSON is syntactically valid and well-structured.
+"""
 
 def _create_fallback_quiz(subject, num_questions):
     logger.warning(f"Using fallback quiz for subject {subject} with {num_questions} questions")
@@ -144,7 +154,7 @@ def create_quiz(subject, level, num_questions=5, reveal_answer=True):
         llm=get_llm()
         prompt=_create_quiz_prompt(subject, level, num_questions)
         logger.info(f"Generating quiz for {subject} at level {level} with {num_questions} questions")
-        response=llm([HumanMessage(content=prompt)])
+        response = llm.invoke(prompt)
         quiz_data=_parse_quiz_response(response.content, subject, num_questions)
         if reveal_answer:
             formatted_quiz=_format_quiz_with_reveal(quiz_data)
@@ -153,9 +163,7 @@ def create_quiz(subject, level, num_questions=5, reveal_answer=True):
                 "formatted_quiz":formatted_quiz
             }
         else:
-            return {
-                "quiz_data":quiz_data
-            }
+            return {"quiz": quiz_data}
     except Exception as e:
         logger.error(f"Error creating quiz: {e}")
         raise Exception(f"Error creating quiz: {e}")

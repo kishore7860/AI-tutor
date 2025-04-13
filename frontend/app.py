@@ -35,7 +35,11 @@ with tab1:
                         "question": question
                     }).json()
                 st.success("Here's your explaination:")
-                st.markdown(response["response"], unsafe_allow_html=True)
+                if "response" in response:
+                    st.markdown(response["response"], unsafe_allow_html=True)
+                else:
+                    st.error("The key 'response' was not found in the API response.")
+                    st.write("Full API response:", response)
             except requests.exceptions.RequestException as e:
                 st.error(f"Error: {e}")
                 st.info("Please check your internet connection and try again.")
@@ -62,22 +66,26 @@ with tab2:
                 if 'formatted_quiz' in response and response["formatted_quiz"]:
                     html(response["formatted_quiz"],height=num_questions*300)
                 else:
-                    for i, q in enumerate(response["quiz"]):
-                        with st.expander(f"Question {i+1}: {q[question]}", expanded=True):
-                            session_id = str(uuid.uuid4())
-                            selected =  st.radio(
-                                "Select an option",
-                                q["options"],
-                                key=f"q_{session_id}"
-                            )
-                            if st.button("Submit", key=f"submit_{session_id}"):
-                                if selected == q["correct_answer"]:
-                                    st.success(f"Correct! {q.get('explanation','')}")
-                                else:
-                                    st.error("Incorrect!")
-                                    st.write(f"Correct answer: {q['correct_answer']}")
-                                    if "explanation" in q:
-                                        st.info(f"Explanation: {q['explanation']}")
+                    quiz_items = response.get("quiz") or response.get("quiz_data")
+                    if not quiz_items:
+                        st.error("Quiz data not found in API response.")
+                    else:
+                        for i, q in enumerate(response["quiz_data"]):
+                            with st.expander(f"Question {i+1}: {q[question]}", expanded=True):
+                                session_id = str(uuid.uuid4())
+                                selected =  st.radio(
+                                    "Select an option",
+                                    q["options"],
+                                    key=f"q_{session_id}"
+                                )
+                                if st.button("Submit", key=f"submit_{session_id}"):
+                                    if selected == q["correct_answer"]:
+                                        st.success(f"Correct! {q.get('explanation','')}")
+                                    else:
+                                        st.error("Incorrect!")
+                                        st.write(f"Correct answer: {q['correct_answer']}")
+                                        if "explanation" in q:
+                                            st.info(f"Explanation: {q['explanation']}")
             except requests.exceptions.RequestException as e:
                 st.error(f"Error: {e}")
                 st.info("Please check your internet connection and try again.")
