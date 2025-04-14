@@ -98,5 +98,4 @@ Here are some key dependencies:
 - openai==1.2.4
 - python-dotenv==1.0.0
 
-
 Make sure to update your requirements.txt if you're adding new libraries.
