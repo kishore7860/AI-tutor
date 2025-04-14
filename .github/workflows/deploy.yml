@@ -20,10 +20,9 @@ jobs:
         aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Log in to Amazon ECR
-      id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Build, tag, and push Docker image to ECR
+    - name: Build, tag, and push Docker image
       env:
         ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
         ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
@@ -32,22 +31,19 @@ jobs:
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-    - name: Write EC2 SSH key file
-      env:
-        AUTH: ${{ secrets.EC2_SSH_KEY_BASE64 }}
+    - name: Write EC2 private key
       run: |
-        echo "$AUTH" | base64 --decode > ${HOME}/key.pem
-        chmod 600 ${HOME}/key.pem
+        echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > ec2_key.pem
+        chmod 600 ec2_key.pem
 
-    - name: Deploy to EC2 via SSH
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ec2-user 
-        key: ${{ secrets.EC2_SSH_KEY }}
-        key_path: ${{ github.workspace }}/key.pem
-        script: |
-          sudo docker stop ai-tutor || true
-          sudo docker rm ai-tutor || true
-          sudo docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest
-          sudo docker run -d --name ai-tutor -p 80:8501 ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest
+    - name: Deploy to EC2
+      env:
+        ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ secrets.EC2_HOST }} << EOF
+          docker stop ai-tutor || true
+          docker rm ai-tutor || true
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker run -d --name ai-tutor -p 80:8501 $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        EOF
