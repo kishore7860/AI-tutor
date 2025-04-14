@@ -32,12 +32,20 @@ jobs:
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
+    - name: Write EC2 SSH key file
+      env:
+        AUTH: ${{ secrets.EC2_SSH_KEY_BASE64 }}
+      run: |
+        echo "$AUTH" | base64 --decode > ${HOME}/key.pem
+        chmod 600 ${HOME}/key.pem
+
     - name: Deploy to EC2 via SSH
       uses: appleboy/ssh-action@v1.0.0
       with:
         host: ${{ secrets.EC2_HOST }}
-        username: ubuntu
+        username: ec2-user 
         key: ${{ secrets.EC2_SSH_KEY }}
+        key_path: ${{ github.workspace }}/key.pem
         script: |
           sudo docker stop ai-tutor || true
           sudo docker rm ai-tutor || true
