@@ -77,9 +77,14 @@ async def generate_quiz_api(data: QuizRequest):
             reveal_answer=data.reveal_answer
         )
         if data.reveal_answer:
-            return {"quiz": quiz_data["quiz_data"], "formatted_quiz": quiz_data["formatted_quiz"]}
+            return {
+                "quiz": quiz_data["quiz_data"],
+                "formatted_quiz": quiz_data.get("formatted_quiz")
+            }
         else:
-            return {"quiz": quiz_data["quiz_data"]}
+            return {
+                "quiz": quiz_data["quiz"]  # 🔄 Not "quiz_data"
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

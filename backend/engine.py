@@ -192,3 +192,4 @@ def export_quiz_to_html(quiz_data,file_path="quiz.html"):
         logger.error(f"Error exporting quiz to HTML: {e}")
         raise Exception(f"Error exporting quiz to HTML: {e}")
         return False
+

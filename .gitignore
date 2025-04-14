@@ -1,1 +1,49 @@
+# Ignore Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Ignore virtual environments
+venv/
 .env
+.env.*
+
+# Ignore local config files
+*.env
+*.pem
+*.log
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore Streamlit cache
+.streamlit/config.toml
+.streamlit/cache/
+.streamlit/secrets.toml
+
+# Ignore VS Code settings
+.vscode/
+
+# Ignore Docker and build artifacts
+*.dockerfile
+Dockerfile~
+docker-compose.yml
+*.tar
+*.img
+*.pid
+
+# Ignore test output or temporary files
+*.out
+*.tmp
+*.swp
+
+# Ignore credentials
+**/key.pem
+**/credentials.json
+
+# Ignore frontend build artifacts (if using npm in the future)
+node_modules/
+dist/
+build/

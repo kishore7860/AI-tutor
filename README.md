@@ -8,8 +8,21 @@ An intelligent tutoring system built with **FastAPI** (backend) and **Streamlit*
 
 ## 🛠️ Project Structure
 
-. ├── backend/ │ ├── main.py # FastAPI server │ └── engine.py # LLM logic for tutoring and quiz ├── frontend/ │ └── app.py # Streamlit frontend interface ├── .env # Contains OPENAI_API_KEY ├── requirements.txt # All project dependencies
-
+AI-tutor/
+├── frontend/
+│   └── app.py
+├── backend/
+│   ├── engine.py
+│   └── main.py
+├── requirements.txt
+├── Dockerfile
+├── .streamlit/
+│   └── config.toml  (optional, for port/theme)
+├── deploy/
+│   └── entrypoint.sh
+└── .github/
+    └── workflows/
+        └── deploy.yml
 
 ---
 
