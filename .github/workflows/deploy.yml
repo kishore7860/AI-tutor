@@ -38,14 +38,17 @@ jobs:
 
     - name: Deploy to EC2
       env:
-        AWS_REGION: ${{ secrets.AWS_REGION }}
         ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
         ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
         ssh -o StrictHostKeyChecking=no -i ec2_key.pem ec2-user@${{ secrets.EC2_HOST }} << EOF
-          aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $ECR_REGISTRY
-          sudo docker stop ai-tutor || true
-          sudo docker rm ai-tutor || true
-          sudo docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          sudo docker run -d --name ai-tutor -p 80:8501 $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker stop ai-tutor || true
+          docker rm ai-tutor || true
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker run -d \
+            --name ai-tutor \
+            -p 80:8501 \
+            -e OPENAI_API_KEY=$OPENAI_API_KEY \
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest
         EOF
